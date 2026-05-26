@@ -1,0 +1,47 @@
+from microbit import *
+import math
+
+LEVEL_0 = Image("00000:00000:00000:00000:00000")
+LEVEL_1 = Image("00000:00000:00000:00000:99999")
+LEVEL_2 = Image("00000:00000:00000:99999:99999")
+LEVEL_3 = Image("00000:00000:99999:99999:99999")
+LEVEL_4 = Image("00000:99999:99999:99999:99999")
+LEVEL_5 = Image("99999:99999:99999:99999:99999")
+
+BAR_GRAPH = [LEVEL_0, LEVEL_1, LEVEL_2, LEVEL_3, LEVEL_4, LEVEL_5]
+
+# Calibration variables
+MIN_VAL = 50   # Noise floor threshold
+MAX_VAL = 500  # High water alert threshold
+
+while True:
+    water_level = pin0.read_analog()
+    
+    if water_level > MAX_VAL:
+        display.show(Image.YES)
+        sleep(200)
+        display.clear()
+        sleep(200)
+    elif water_level > MIN_VAL:
+        # Normalize the raw input value to a 0.0 - 1.0 range
+        normalized = (water_level - MIN_VAL) / (MAX_VAL - MIN_VAL)
+        
+        # Limit boundary to avoid math errors
+        if normalized > 1.0: normalized = 1.0
+        if normalized < 0.0: normalized = 0.0
+        
+        # Exponential curve: squares the value to stretch the top end
+        # This makes it less sensitive at the start and highly sensitive at the top
+        curved_value = normalized ** 2
+        
+        # Scale to match your 5 levels (indices 1 to 5)
+        level = int(curved_value * 4) + 1
+        
+        if level > 5:
+            level = 5
+            
+        display.show(BAR_GRAPH[level])
+    else:
+        display.clear()
+        
+    sleep(100)
